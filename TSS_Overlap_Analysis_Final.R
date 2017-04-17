@@ -1,13 +1,15 @@
 # TSS Overlap Analysis - Final
+# =============================================================================
 # Author: Vamsee Pillalamarri
 # Email: vpillal1@jhmi.edu
+# =============================================================================
 
 # Load Libraries ---------------------------------------------------------------
 # Experimental question:
 # Does a gene's expression level correlate with ATAC-Seq peak height 
 # at that gene's promoter (specifically the TSS)?
 library(GenomicRanges)
-library(RMySQL)
+# library(RMySQL)
 library(ggplot2)
 library(gridExtra)
 library(cowplot)
@@ -39,7 +41,7 @@ MB_Joint_peaks_all <- makeGRangesFromDataFrame(MB_Joint_peaks_all, keep.extra.co
 FB_Joint_peaks_blacklisted <- makeGRangesFromDataFrame(FB_Joint_peaks_blacklisted)
 MB_Joint_peaks_blacklisted <- makeGRangesFromDataFrame(MB_Joint_peaks_blacklisted)
 
-# Select only 'blacklisted' peaks from 'all' <- these are the ones *to use*; doing it this way preserves metadata cols which we need
+# Adding metadata cols?
 FB_Joint_peaks_blacklisted <- 
   FB_Joint_peaks_all[FB_Joint_peaks_all %in% FB_Joint_peaks_blacklisted]
 MB_Joint_peaks_blacklisted <- 
@@ -49,6 +51,8 @@ MB_Joint_peaks_blacklisted <-
 # Read in UCSC mm9 Ensembl Data ----------------------------------------------
 setwd("/users/vamsee/Desktop/Hopkins/Rotations/McCallionLab_Rotation/ATAC_plus_RNA_Seq_Analysis/")
 
+# TODO Add info about version # of ENSembl datatabe
+# TODO Add info about the different data tables below
 ENSGene_mm9_ucsc <- read.table("ENSGene_mm9_UCSC.txt", header=FALSE, sep="\t")
 colnames(ENSGene_mm9_ucsc) <- c("bin","name","chrom","strand","txStart","txEnd",
                                 "cdsStart","cdsEnd","exonCount","exonStarts",
@@ -72,14 +76,14 @@ all.rpkm <- read.table("All.RPKM-ensembl.v64.txt", header=TRUE)
 len <- nrow(all.rpkm)
 colnames(all.rpkm) <- c("ensembl_gene_id","FB.rpkm.mean","MB.rpkm.mean")
 
-# # Add gene symbol to all.rpkm
-# all.rpkm$mgi_symbol <- rep(".", len)
-# for (i in 1:nrow(all.rpkm)) {
-#   cat(i,'\n')
-#   ENST_IDs <- as.character(ENSGene_mm9_ucsc$name[ENSGene_mm9_ucsc$name2==as.character(all.rpkm$ensembl_gene_id[i])])
-#   all.rpkm$mgi_symbol[i] <- 
-#     unique(as.character(ENSGene_symbol_mm9_ucsc$value[ENSGene_symbol_mm9_ucsc$name %in% ENST_IDs]))
-# }
+# Add gene symbol to all.rpkm
+all.rpkm$mgi_symbol <- rep(".", len)
+for (i in 1:nrow(all.rpkm)) {
+  cat(i,'\n')
+  ENST_IDs <- as.character(ENSGene_mm9_ucsc$name[ENSGene_mm9_ucsc$name2==as.character(all.rpkm$ensembl_gene_id[i])])
+  all.rpkm$mgi_symbol[i] <-
+    unique(as.character(ENSGene_symbol_mm9_ucsc$value[ENSGene_symbol_mm9_ucsc$name %in% ENST_IDs]))
+}
 # # Write updated all.rpkm to file, in the future, read it in
 # # write.table(all.rpkm,'All.RPKM-ensembl.v64.withMGISymbol.txt', sep="\t", quote = F)
 
@@ -97,13 +101,16 @@ colnames(all.rpkm) <- c("ensembl_gene_id","FB.rpkm.mean","MB.rpkm.mean")
 
 
 
-# Iterate through all.rpkm ------------------------------------------------
+# Iterate through all.rpkm ----------------------------------------------------
+# TODO: Add extra detail about code below
 len <- nrow(all.rpkm)
 
+# TODO: Add more info about each of the variables below
 chr <- rep(".", len)
 strand <- rep(".", len)
 txStart <- numeric(len)
 txEnd <- numeric(len)
+
 FB_peak_hit_count <- numeric(len)
 FB_peak_overlaps <- numeric(len)
 FB_peak_hits <- list()
@@ -134,7 +141,6 @@ for (i in 1:len) {
 
     if (m[i] > 1) {
       # > 1 listed Ensembl transcripts in UCSC mm9 data
-      # Temporarily ignore multiple isoforms
       FB_peak_hit_count_mult <- numeric(m[i])
       FB_peak_hits_mult <- numeric(m[i])
       FB_peak_hit_pileup_mult <- numeric(m[i])
@@ -167,7 +173,7 @@ for (i in 1:len) {
           FB_peak_hits_mult[k] <- to(findOverlaps(TSS_bed, FB_Joint_peaks_all))
           FB_peak_hit_pileup_mult[k] <- FB_Joint_peaks_all$Pileup[FB_peak_hits_mult[k]]
         } else {
-          # cat("Too many peak hits within a multiple transcript Gene Model! Or NO HITS!\n")
+          cat("Too many peak hits within a multiple transcript Gene Model! Or NO HITS!\n")
         }
         
         # Overlap MB peaks with TSS
@@ -176,7 +182,7 @@ for (i in 1:len) {
           MB_peak_hits_mult[k] <- to(findOverlaps(TSS_bed, MB_Joint_peaks_all))
           MB_peak_hit_pileup_mult[k] <- MB_Joint_peaks_all$Pileup[MB_peak_hits_mult[k]]
         } else {
-          # cat("Too many peak hits within a multiple transcript Gene Model! Or NO HITS!\n")
+          cat("Too many peak hits within a multiple transcript Gene Model! Or NO HITS!\n")
         }
       }
       
@@ -206,16 +212,16 @@ for (i in 1:len) {
       # Account for gene strand
       if (as.logical(strand(TSS_bed)=="-")) {
         # Genes on the minus strand in UCSC need to have txEnd be assigned as the TSS
-        # So, if gene is on minus strand, set the TSS "region" to be txEnd-1:txEnd
+        # So, if gene is on minus strand, set the TSS "region" to be (txEnd-1):txEnd
         start(TSS_bed) <- end(TSS_bed)-1
       } else {
         # Genes on the positive strand in UCSC need to have txStart assigned as the TSS
-        # So, if the gene is on the positive strand, set the TSS "region" to be txStart:txStart+1
+        # So, if the gene is on the positive strand, set the TSS "region" to be txStart:(txStart+1)
         end(TSS_bed) <- start(TSS_bed)+1
       }
       
       # Overlap FB peaks with TSS
-      FB_peak_hit_count[i] <- countOverlaps(TSS_bed, FB_Joint_peaks_all)
+      FB_peak_hit_count[i] <- countOverlaps(TSS_bed, FB_Joint_peaks_all) # Actual INTERSECTION happens here
       if (FB_peak_hit_count[i] > 0) {
         if (FB_peak_hit_count[i] == 1) {
           FB_peak_hits[[i]] <- to(findOverlaps(TSS_bed, FB_Joint_peaks_all))
@@ -273,6 +279,8 @@ df <- df[df$m>=1 & df$chr !="chrM", ] # Ignore chrM
 df <- df[grep("random", df$chr, invert = TRUE),] # Ignore 'random' chr contigs
 df <- df[grep("Un", df$chr, invert = TRUE), ] # Ignore 'Unplaced' chr contigs
 # df <- df[!(df$all.rpkm.FB.rpkm.mean == 0 | df$FB_peak_hit_pileup == 0),] # Ignore genes with zero-RPKM OR zero-pileups
+
+# TODO ADD Pseudocount / make it clear that "0" RPKMS / Pileups are actually 0s not other values
 
 FB <- ggplot(df[which(df$m>=1 & df$chr!="chrM"),], aes(x=log2(df$FB_peak_hit_pileup[which(df$m>=1 & df$chr!="chrM")]), y=log2(df$all.rpkm.FB.rpkm.mean[which(df$m>=1 & df$chr!="chrM")]))) +
   geom_point(alpha=0.5,aes(colour = factor(df$tx_subtype[which(df$m>=1 & df$chr!="chrM")]))) +
