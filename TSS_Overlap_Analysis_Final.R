@@ -298,3 +298,40 @@ MB <- ggplot(df[which(df$m>=1 & df$chr!="chrM"),], aes(x=log2(df$MB_peak_hit_pil
 grid.arrange(MB, FB, ncol=2)
 # plot_grid(MB, FB, labels = c("A", "B"), align = "h") # using cowplot
 
+
+# Correlation analyses ---------------------------------------------------------
+# Correlation between TSS peaks and expression levels
+# Only for genes that have non-zero RPKM
+df <- df[df$m>=1 & df$chr !="chrM", ] # Ignore chrM
+df <- df[grep("random", df$chr, invert = TRUE),] # Ignore 'random' chr contigs
+df <- df[grep("Un", df$chr, invert = TRUE), ] # Ignore 'Unplaced' chr contigs
+
+# r^2 for FB
+fb_table <- df[!(df$all.rpkm.FB.rpkm.mean == 0 | df$FB_peak_hit_pileup == 0),] # Ignore genes with zero-RPKM OR zero-pileups
+pileups <- fb_table$FB_peak_hit_pileup
+fpkms <- fb_table$all.rpkm.FB.rpkm.mean
+z2 <- data.frame(pileups,fpkms)
+r.squared <- summary(lm(log2(pileups)~log2(fpkms), data=z2))$r.squared
+r.squared
+
+# r^2 for MB
+mb_table <- df[!(df$all.rpkm.MB.rpkm.mean == 0 | df$MB_peak_hit_pileup == 0),] # Ignore genes with zero-RPKM OR zero-pileups
+pileups <- mb_table$MB_peak_hit_pileup
+fpkms <- mb_table$all.rpkm.MB.rpkm.mean
+z2 <- data.frame(pileups,fpkms)
+r.squared <- summary(lm(log2(pileups)~log2(fpkms), data=z2))$r.squared
+r.squared
+
+# Linear regression of rpkms ~ pileups (OLD CODE)
+#   ...with pseudo count of 1 for 0 values prior to log-transformation
+# a <- df$all.rpkm.FB.rpkm.mean[which(df$m>=1)] # RPKM
+# a[which(a==0)] <- 1 # This is wrong...add pseudocount to *all* values not just the ones with 0 values in them
+# b <- df$FB_peak_hit_pileup[which(df$m>=1)] # Pileups
+# b[which(b==0)] <- 1
+# a <- log2(a)
+# b <- log2(b)
+# 
+# z2 <- data.frame(a,b)
+# 
+# fit <- lm(a,b, data = z2) # Linear regression of RPKM ~ Pileups
+# summary(fit2)
