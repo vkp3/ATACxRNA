@@ -2,7 +2,6 @@
 # Author: Vamsee Pillalamarri
 # Email: vpillal1@jhmi.edu
 
-
 # Load Libraries ---------------------------------------------------------------
 # Experimental question:
 # Does a gene's expression level correlate with ATAC-Seq peak height 
@@ -10,6 +9,8 @@
 library(GenomicRanges)
 library(RMySQL)
 library(ggplot2)
+library(gridExtra)
+library(cowplot)
 
 # Read in peak data / Create GRanges objects -----------------------------------
 setwd("/users/vamsee/Desktop/Hopkins/Rotations/McCallionLab_Rotation/ATAC_plus_RNA_Seq_Analysis/individual_bams_and_peaks/")
@@ -276,7 +277,7 @@ df <- df[grep("Un", df$chr, invert = TRUE), ] # Ignore 'Unplaced' chr contigs
 FB <- ggplot(df[which(df$m>=1 & df$chr!="chrM"),], aes(x=log2(df$FB_peak_hit_pileup[which(df$m>=1 & df$chr!="chrM")]), y=log2(df$all.rpkm.FB.rpkm.mean[which(df$m>=1 & df$chr!="chrM")]))) +
   geom_point(alpha=0.5,aes(colour = factor(df$tx_subtype[which(df$m>=1 & df$chr!="chrM")]))) +
   labs(x="log2 Pileup",y="log2 Mean RPKM", 
-       title="Log Transformed Pileups vs Mean RPKMs at TSSs +/- 10kb Window \n(n=37,681 Genes) for Forebrain") +
+       title="Log Transformed Pileups vs Mean RPKMs at TSSs \n(n=37,681 Genes) for Forebrain") +
   scale_color_brewer(type="qual", palette="Set1", name="# Transcripts") +
   geom_vline(xintercept = 10, linetype="longdash",colour="red") +
   geom_hline(yintercept = 10, linetype="longdash",colour="red") + 
@@ -287,7 +288,7 @@ FB <- ggplot(df[which(df$m>=1 & df$chr!="chrM"),], aes(x=log2(df$FB_peak_hit_pil
 MB <- ggplot(df[which(df$m>=1 & df$chr!="chrM"),], aes(x=log2(df$MB_peak_hit_pileup[which(df$m>=1 & df$chr!="chrM")]), y=log2(df$all.rpkm.MB.rpkm.mean[which(df$m>=1 & df$chr!="chrM")]))) +
   geom_point(alpha=0.5,aes(colour = factor(df$tx_subtype[which(df$m>=1 & df$chr!="chrM")]))) +
   labs(x="log2 Pileup",y="log2 Mean RPKM", 
-       title="Log Transformed Pileups vs Mean RPKMs at TSSs +/- 10kb Window \n(n=37,681 Genes) for Midbrain") +
+       title="Log Transformed Pileups vs Mean RPKMs at TSSs \n(n=37,681 Genes) for Midbrain") +
   scale_color_brewer(type="qual", palette="Set1", name="# Transcripts") +
   geom_vline(xintercept = 10, linetype="longdash",colour="red") +
   geom_hline(yintercept = 10, linetype="longdash",colour="red") + 
