@@ -9,7 +9,6 @@
 # Does a gene's expression level correlate with ATAC-Seq peak height 
 # at that gene's promoter (specifically the TSS)?
 library(GenomicRanges)
-# library(RMySQL)
 library(ggplot2)
 library(gridExtra)
 library(cowplot)
@@ -41,7 +40,7 @@ MB_Joint_peaks_all <- makeGRangesFromDataFrame(MB_Joint_peaks_all, keep.extra.co
 FB_Joint_peaks_blacklisted <- makeGRangesFromDataFrame(FB_Joint_peaks_blacklisted)
 MB_Joint_peaks_blacklisted <- makeGRangesFromDataFrame(MB_Joint_peaks_blacklisted)
 
-# Adding metadata cols?
+# # TODO -- Explain what is happening here: Is this adding metadata cols?
 FB_Joint_peaks_blacklisted <- 
   FB_Joint_peaks_all[FB_Joint_peaks_all %in% FB_Joint_peaks_blacklisted]
 MB_Joint_peaks_blacklisted <- 
